@@ -13,14 +13,20 @@ impl ConstantPool {
         }
     }
 
-    pub fn push_value(&mut self, value: Value) -> u64 {
+    pub fn push_value(&mut self, value: Value) -> usize {
         let index = self.constants.len();
-        self.constants.push(value.into());
-        return index as u64;
+        self.constants.push(value);
+        index
     }
 
     pub fn get(&self, index: usize) -> Option<&Value> {
         self.constants.get(index)
+    }
+}
+
+impl Default for ConstantPool {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

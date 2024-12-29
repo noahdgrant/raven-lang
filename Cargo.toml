@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
+[features]
+# TODO: remove later
+default = ["debug_trace_execution"]
+debug_trace_execution = []
