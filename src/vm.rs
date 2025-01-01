@@ -1,11 +1,11 @@
 use std::fmt;
 
-use crate::{disassemble_instruction, ByteCode, OpCode, Value};
+use crate::{disassemble_instruction, ByteCode, OpCode, Value, compile};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum InterpretError {
-    CompileError(String),
-    RuntimeError(String),
+    CompileError,
+    RuntimeError,
 }
 
 enum BinaryOperation {
@@ -28,51 +28,8 @@ impl VirtualMachine {
         }
     }
 
-    pub fn interpret(&mut self, bytecode: &ByteCode) -> Result<(), InterpretError> {
-        while self.ip < bytecode.chunk_count() {
-            if cfg!(feature = "debug_trace_execution") {
-                println!("          {}", self.stack);
-                disassemble_instruction(bytecode, self.ip);
-            };
-
-            let chunk = match bytecode.get_chunk(self.ip) {
-                Some(c) => c,
-                None => panic!("Instruction pointer ({}) > chunk count", self.ip),
-            };
-            self.ip += 1;
-            match OpCode::try_from(*chunk) {
-                Ok(opcode) => match opcode {
-                    OpCode::Constant => {
-                        let index = match bytecode.get_chunk(self.ip) {
-                            Some(i) => i,
-                            None => panic!("Instruction pointer ({}) > chunk count", self.ip),
-                        };
-                        self.ip += 1;
-                        let constant = match bytecode.get_constant(*index) {
-                            Some(c) => c,
-                            None => panic!("Invalid constant index {}", chunk),
-                        };
-                        self.stack.push(*constant);
-                    }
-                    OpCode::Add => self.binary_op(BinaryOperation::Add),
-                    OpCode::Subtract => self.binary_op(BinaryOperation::Subtract),
-                    OpCode::Multiply => self.binary_op(BinaryOperation::Multiply),
-                    OpCode::Divide => self.binary_op(BinaryOperation::Divide),
-                    OpCode::Negate => {
-                        if let Some(element) = self.stack.pop() {
-                            self.stack.push(-element)
-                        }
-                    }
-                    OpCode::Return => {
-                        if let Some(element) = self.stack.pop() {
-                            println!("{}", element)
-                        }
-                    }
-                },
-                Err(_) => panic!("Unknown opcode {}", chunk),
-            }
-        }
-        Ok(())
+    pub fn interpret(&mut self, source: &str) -> Result<(), InterpretError> {
+        compile(source)
     }
 
     fn binary_op(&mut self, operation: BinaryOperation) {
@@ -127,3 +84,51 @@ impl<T: fmt::Display> fmt::Display for Stack<T> {
         Ok(())
     }
 }
+
+
+//pub fn interpret(&mut self, source: &ByteCode) -> Result<(), InterpretError> {
+//    while self.ip < source.chunk_count() {
+//        if cfg!(feature = "debug_trace_execution") {
+//            println!("          {}", self.stack);
+//            disassemble_instruction(source, self.ip);
+//        };
+//
+//        let chunk = match source.get_chunk(self.ip) {
+//            Some(c) => c,
+//            None => panic!("Instruction pointer ({}) > chunk count", self.ip),
+//        };
+//        self.ip += 1;
+//        match OpCode::try_from(*chunk) {
+//            Ok(opcode) => match opcode {
+//                OpCode::Constant => {
+//                    let index = match source.get_chunk(self.ip) {
+//                        Some(i) => i,
+//                        None => panic!("Instruction pointer ({}) > chunk count", self.ip),
+//                    };
+//                    self.ip += 1;
+//                    let constant = match source.get_constant(*index) {
+//                        Some(c) => c,
+//                        None => panic!("Invalid constant index {}", chunk),
+//                    };
+//                    self.stack.push(*constant);
+//                }
+//                OpCode::Add => self.binary_op(BinaryOperation::Add),
+//                OpCode::Subtract => self.binary_op(BinaryOperation::Subtract),
+//                OpCode::Multiply => self.binary_op(BinaryOperation::Multiply),
+//                OpCode::Divide => self.binary_op(BinaryOperation::Divide),
+//                OpCode::Negate => {
+//                    if let Some(element) = self.stack.pop() {
+//                        self.stack.push(-element)
+//                    }
+//                }
+//                OpCode::Return => {
+//                    if let Some(element) = self.stack.pop() {
+//                        println!("{}", element)
+//                    }
+//                }
+//            },
+//            Err(_) => panic!("Unknown opcode {}", chunk),
+//        }
+//    }
+//    Ok(())
+//}
